@@ -1,0 +1,2037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CzarFlow ERP - CZAR International (Rajkot)</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        odoo: {
+                            purple: '#714B67',
+                            darkPurple: '#593B52',
+                            teal: '#00A09D',
+                            tealHover: '#008784',
+                            grayBg: '#F8F9FA',
+                            paperBg: '#FFFFFF',
+                            border: '#E0E0E0',
+                            text: '#212529',
+                            muted: '#6C757D',
+                            success: '#28A745',
+                            warning: '#FFC107',
+                            info: '#17A2B8',
+                            danger: '#DC3545'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Font Awesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js for Analytics -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f1f2f6;
+            color: #212529;
+            overflow-x: hidden;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #aaa;
+        }
+
+        /* Odoo Paper Document Sheet Effect */
+        .odoo-paper-sheet {
+            background: #ffffff;
+            border: 1px solid #dcdfe6;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+        }
+
+        /* Status Progress Bar Ribbon */
+        .status-pipeline-step {
+            position: relative;
+            padding: 6px 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-right: 1px solid #e9ecef;
+            display: inline-flex;
+            align-items: center;
+            background: #f8f9fa;
+            color: #6c757d;
+            transition: all 0.2s ease;
+        }
+        .status-pipeline-step.active {
+            background-color: #00A09D;
+            color: #ffffff;
+        }
+        .status-pipeline-step.completed {
+            background-color: #e6f5f5;
+            color: #00A09D;
+        }
+        .status-pipeline-step:last-child {
+            border-right: none;
+        }
+
+        /* Odoo Smart Button Header */
+        .smart-btn {
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            padding: 6px 14px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: flex-start;
+            min-width: 100px;
+        }
+        .smart-btn:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        /* Print Modal Overlay styling */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printableDocument, #printableDocument * {
+                visibility: visible;
+            }
+            #printableDocument {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen text-sm select-none">
+
+    <!-- TOP ODOO NAVBAR -->
+    <header class="bg-odoo-purple text-white flex items-center justify-between px-3 py-1.5 shadow-md z-30 shrink-0">
+        <div class="flex items-center space-x-3">
+            <!-- App Launcher Grid Icon -->
+            <button onclick="toggleAppMenu()" class="p-1.5 hover:bg-odoo-darkPurple rounded transition flex items-center justify-center text-lg focus:outline-none" title="Apps Menu">
+                <i class="fa-solid fa-grip text-white"></i>
+            </button>
+            
+            <!-- Company Brand & Current App Title -->
+            <div class="flex items-center space-x-2">
+                <span class="font-bold tracking-wide text-base flex items-center space-x-1.5">
+                    <span class="bg-white text-odoo-purple text-xs font-black px-1.5 py-0.5 rounded">CZAR</span>
+                    <span>CzarFlow ERP</span>
+                </span>
+                <span class="text-odoo-purple/50 text-xs">|</span>
+                <span id="currentAppHeaderTitle" class="text-xs font-semibold text-purple-200 uppercase tracking-wider">Dashboard</span>
+            </div>
+        </div>
+
+        <!-- Central Search Bar -->
+        <div class="hidden md:flex items-center bg-white/10 hover:bg-white/20 text-white rounded px-2.5 py-1 w-80 transition border border-white/10">
+            <i class="fa-solid fa-magnifying-glass text-xs text-purple-200 mr-2"></i>
+            <input type="text" id="globalSearchInput" onkeyup="handleGlobalSearch()" placeholder="Search Sales Orders, Products, HSN, Customs..." class="bg-transparent text-xs w-full focus:outline-none text-white placeholder-purple-200/70">
+            <span class="text-[10px] bg-white/20 px-1 rounded text-purple-100 font-mono">Alt+K</span>
+        </div>
+
+        <!-- Right System Indicators & User Switcher -->
+        <div class="flex items-center space-x-3 text-xs">
+            <!-- FX Live Ticker -->
+            <div class="hidden lg:flex items-center space-x-1 bg-black/20 px-2 py-0.5 rounded text-[11px] text-emerald-300 font-mono border border-emerald-500/20" title="Live RBI Export Reference Rate">
+                <i class="fa-solid fa-coins"></i>
+                <span>1 USD = ₹83.50</span>
+            </div>
+
+            <!-- Rajkot Factory Status Badge -->
+            <div class="hidden sm:flex items-center space-x-1 text-[11px] text-purple-100 bg-white/10 px-2 py-0.5 rounded">
+                <i class="fa-solid fa-industry text-amber-300"></i>
+                <span>GIDC Metoda Plant</span>
+            </div>
+
+            <!-- Notifications Bell -->
+            <button class="relative p-1.5 hover:bg-odoo-darkPurple rounded text-purple-100">
+                <i class="fa-solid fa-bell"></i>
+                <span id="notifBadge" class="absolute top-0 right-0 w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span>
+            </button>
+
+            <!-- User Avatar & Location -->
+            <div class="flex items-center space-x-2 pl-2 border-l border-white/20">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80" class="w-6 h-6 rounded-full border border-white/40 object-cover" alt="User Avatar">
+                <div class="hidden sm:block text-left">
+                    <div class="font-bold text-[11px] leading-tight">CZAR Admin</div>
+                    <div class="text-[9px] text-purple-200 leading-none">Rajkot HQ (INMUN1)</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ODOO APP LAUNCHER GRID DRAWER (HIDDEN BY DEFAULT) -->
+    <div id="appGridDrawer" class="hidden fixed inset-0 bg-black/50 z-50 backdrop-blur-sm transition-opacity" onclick="toggleAppMenu()">
+        <div class="bg-odoo-purple/95 text-white w-full max-w-2xl mx-auto mt-12 rounded-xl p-6 shadow-2xl border border-white/10" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-6 pb-3 border-b border-white/10">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-cubes text-xl text-teal-300"></i>
+                    <h2 class="text-lg font-bold tracking-wide">CZAR International Enterprise Apps</h2>
+                </div>
+                <button onclick="toggleAppMenu()" class="text-white/70 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 gap-4 text-center">
+                <button onclick="switchApp('dashboard')" class="p-3 rounded-lg hover:bg-white/10 transition flex flex-col items-center group">
+                    <div class="w-12 h-12 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition">📊</div>
+                    <span class="text-xs font-semibold">Dashboard</span>
+                    <span class="text-[10px] text-purple-200">KPIs & Revenue</span>
+                </button>
+
+                <button onclick="switchApp('sales')" class="p-3 rounded-lg hover:bg-white/10 transition flex flex-col items-center group">
+                    <div class="w-12 h-12 rounded-xl bg-teal-500/20 text-teal-300 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition">🛒</div>
+                    <span class="text-xs font-semibold">Sales Orders</span>
+                    <span class="text-[10px] text-purple-200">Quotations & Orders</span>
+                </button>
+
+                <button onclick="switchApp('export')" class="p-3 rounded-lg hover:bg-white/10 transition flex flex-col items-center group">
+                    <div class="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition">🚢</div>
+                    <span class="text-xs font-semibold">Export Control</span>
+                    <span class="text-[10px] text-purple-200">Mundra / Customs / LUT</span>
+                </button>
+
+                <button onclick="switchApp('import')" class="p-3 rounded-lg hover:bg-white/10 transition flex flex-col items-center group">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition">📦</div>
+                    <span class="text-xs font-semibold">Import Shipments</span>
+                    <span class="text-[10px] text-purple-200">Raw Materials / B/E</span>
+                </button>
+
+                <button onclick="switchApp('inventory')" class="p-3 rounded-lg hover:bg-white/10 transition flex flex-col items-center group">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition">🏭</div>
+                    <span class="text-xs font-semibold">Inventory Stock</span>
+                    <span class="text-[10px] text-purple-200">GIDC Metoda Warehouse</span>
+                </button>
+
+                <button onclick="switchApp('partners')" class="p-3 rounded-lg hover:bg-white/10 transition flex flex-col items-center group">
+                    <div class="w-12 h-12 rounded-xl bg-pink-500/20 text-pink-300 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition">👥</div>
+                    <span class="text-xs font-semibold">Customers & Suppliers</span>
+                    <span class="text-[10px] text-purple-200">Global Buyers & Vendors</span>
+                </button>
+
+                <button onclick="switchApp('documents')" class="p-3 rounded-lg hover:bg-white/10 transition flex flex-col items-center group">
+                    <div class="w-12 h-12 rounded-xl bg-orange-500/20 text-orange-300 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition">📄</div>
+                    <span class="text-xs font-semibold">Document Hub</span>
+                    <span class="text-[10px] text-purple-200">Commercial Invoices, EWB</span>
+                </button>
+
+                <button onclick="switchApp('invoices')" class="p-3 rounded-lg hover:bg-white/10 transition flex flex-col items-center group">
+                    <div class="w-12 h-12 rounded-xl bg-green-500/20 text-green-300 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition">💳</div>
+                    <span class="text-xs font-semibold">Invoices & Finance</span>
+                    <span class="text-[10px] text-purple-200">GST / Drawback 3%</span>
+                </button>
+
+                <button onclick="switchApp('reports')" class="p-3 rounded-lg hover:bg-white/10 transition flex flex-col items-center group">
+                    <div class="w-12 h-12 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition">📈</div>
+                    <span class="text-xs font-semibold">Analytics & Reports</span>
+                    <span class="text-[10px] text-purple-200">Export Turnover & Tax</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DEMO WORKFLOW GUIDED BANNER -->
+    <div class="bg-amber-50 border-b border-amber-200 px-4 py-1.5 flex flex-wrap items-center justify-between text-xs text-amber-900 z-20">
+        <div class="flex items-center space-x-2 my-0.5">
+            <span class="bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded tracking-wide uppercase">Interactive Demo Story</span>
+            <span class="hidden md:inline font-medium">Follow CZAR International export flow:</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-1.5 my-0.5">
+            <button onclick="demoStep(1)" class="bg-white hover:bg-amber-100 border border-amber-300 text-amber-800 px-2 py-0.5 rounded text-[11px] font-medium shadow-sm transition">
+                1️⃣ View Sales Order (Dubai)
+            </button>
+            <button onclick="demoStep(2)" class="bg-white hover:bg-amber-100 border border-amber-300 text-amber-800 px-2 py-0.5 rounded text-[11px] font-medium shadow-sm transition">
+                2️⃣ Track Export Shipment (Mundra)
+            </button>
+            <button onclick="demoStep(3)" class="bg-white hover:bg-amber-100 border border-amber-300 text-amber-800 px-2 py-0.5 rounded text-[11px] font-medium shadow-sm transition">
+                3️⃣ Receive Import Stock (China)
+            </button>
+            <button onclick="demoStep(4)" class="bg-white hover:bg-amber-100 border border-amber-300 text-amber-800 px-2 py-0.5 rounded text-[11px] font-medium shadow-sm transition">
+                4️⃣ Print Commercial Invoice
+            </button>
+            <button onclick="demoStep(5)" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-0.5 rounded text-[11px] font-bold shadow-sm transition">
+                ⚡ Record $24,800 Payment
+            </button>
+        </div>
+    </div>
+
+    <!-- ODOO CONTROL PANEL SUB-HEADER -->
+    <div class="bg-white border-b border-gray-300 px-4 py-2 flex flex-wrap items-center justify-between gap-2 z-10 shadow-sm shrink-0">
+        <!-- Breadcrumbs & Quick Action Buttons -->
+        <div class="flex items-center space-x-3">
+            <!-- Action Buttons -->
+            <div id="controlPanelButtons" class="flex items-center space-x-2">
+                <button onclick="openNewRecordModal()" class="bg-odoo-teal hover:bg-odoo-tealHover text-white px-3 py-1 rounded font-semibold text-xs transition shadow-sm flex items-center space-x-1">
+                    <i class="fa-solid fa-plus text-[10px]"></i>
+                    <span>New</span>
+                </button>
+                <button onclick="saveCurrentRecord()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-2.5 py-1 rounded font-medium text-xs transition">
+                    Save
+                </button>
+                <button id="btnPrimaryAction" onclick="handlePrimaryAction()" class="bg-odoo-purple hover:bg-odoo-darkPurple text-white px-3 py-1 rounded font-semibold text-xs transition shadow-sm hidden">
+                    Confirm Order
+                </button>
+                <button id="btnPrintDocs" onclick="printActiveDocument()" class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-2.5 py-1 rounded font-medium text-xs transition flex items-center space-x-1 hidden">
+                    <i class="fa-solid fa-print text-gray-500"></i>
+                    <span>Print Docs</span>
+                </button>
+            </div>
+
+            <span class="text-gray-300">|</span>
+
+            <!-- Breadcrumb Navigation -->
+            <div id="breadcrumbNav" class="flex items-center space-x-1 text-sm font-semibold text-gray-700">
+                <span class="text-odoo-purple cursor-pointer hover:underline" onclick="switchApp('sales')">Sales</span>
+                <span class="text-gray-400">/</span>
+                <span class="text-gray-900 font-bold" id="breadcrumbActiveItem">SO-00842 (Al-Maya Group Dubai)</span>
+            </div>
+        </div>
+
+        <!-- Right Side: View Switchers & Search Filters -->
+        <div class="flex items-center space-x-3">
+            <!-- Record Count Indicator -->
+            <span id="recordPaginationText" class="text-xs text-gray-500 hidden sm:inline font-mono">1 - 4 of 4</span>
+
+            <!-- View Switcher Icons (List, Kanban, Form) -->
+            <div class="bg-gray-100 p-0.5 rounded border border-gray-300 flex items-center space-x-0.5">
+                <button id="viewBtnList" onclick="setViewMode('list')" class="px-2 py-1 rounded text-xs text-gray-600 hover:text-odoo-purple hover:bg-white transition" title="List View">
+                    <i class="fa-solid fa-list"></i>
+                </button>
+                <button id="viewBtnKanban" onclick="setViewMode('kanban')" class="px-2 py-1 rounded text-xs text-gray-600 hover:text-odoo-purple hover:bg-white transition" title="Kanban Cards">
+                    <i class="fa-solid fa-table-cells-large"></i>
+                </button>
+                <button id="viewBtnForm" onclick="setViewMode('form')" class="px-2 py-1 rounded text-xs bg-white text-odoo-purple shadow-sm font-bold transition" title="Form Detail View">
+                    <i class="fa-solid fa-file-lines"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APPLICATION CONTENT AREA -->
+    <main id="appMainContent" class="flex-1 overflow-y-auto p-3 sm:p-5 bg-gray-100">
+        <!-- Content will be dynamically populated by JS according to state -->
+    </main>
+
+    <!-- MODAL 1: PRINTABLE EXPORT DOCUMENT MODAL -->
+    <div id="documentModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-2 sm:p-4 backdrop-blur-xs">
+        <div class="bg-white w-full max-w-4xl max-h-[92vh] rounded-lg shadow-2xl flex flex-col overflow-hidden border border-gray-300">
+            <!-- Modal Header -->
+            <div class="bg-odoo-purple text-white px-4 py-3 flex items-center justify-between shrink-0">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-file-invoice text-teal-300"></i>
+                    <h3 id="docModalTitle" class="font-bold text-sm sm:text-base">Commercial Export Invoice & Customs Document</h3>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="window.print()" class="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded text-xs font-semibold transition">
+                        <i class="fa-solid fa-print mr-1"></i> Print / PDF
+                    </button>
+                    <button onclick="closeDocModal()" class="text-white/80 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+
+            <!-- Modal Printable Canvas -->
+            <div id="printableDocument" class="p-6 overflow-y-auto bg-white text-gray-800 text-xs leading-relaxed font-sans">
+                <!-- Dynamic Commercial Invoice Content HTML inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: RECORD PAYMENT MODAL -->
+    <div id="paymentModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-lg shadow-2xl overflow-hidden border border-gray-300">
+            <div class="bg-emerald-700 text-white px-4 py-3 flex justify-between items-center">
+                <h3 class="font-bold text-sm"><i class="fa-solid fa-money-bill-transfer mr-2"></i>Record Export Payment</h3>
+                <button onclick="closePaymentModal()" class="text-white/80 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-4 space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Customer / Overseas Buyer</label>
+                    <input type="text" id="payCustomer" readonly value="Al-Maya Group Dubai (UAE)" class="w-full bg-gray-100 border border-gray-300 rounded px-2.5 py-1.5 text-xs font-medium">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Invoice Amount (USD)</label>
+                        <input type="text" id="payAmountUSD" value="$24,800.00" class="w-full border border-gray-300 rounded px-2.5 py-1.5 text-xs font-bold text-emerald-700">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">INR Equivalent (₹)</label>
+                        <input type="text" id="payAmountINR" readonly value="₹20,70,800" class="w-full bg-gray-100 border border-gray-300 rounded px-2.5 py-1.5 text-xs font-mono font-bold">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Payment Method</label>
+                    <select id="payMethod" class="w-full border border-gray-300 rounded px-2.5 py-1.5 text-xs">
+                        <option>SWIFT / Wire Transfer (HDFC Bank Rajkot)</option>
+                        <option>Irrevocable Letter of Credit (LC at Sight)</option>
+                        <option>Advance Bank Telegraphic Transfer (TT)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Bank Reference / FIRC No.</label>
+                    <input type="text" id="payFIRC" value="HDFC-EX-9982410-IN" class="w-full border border-gray-300 rounded px-2.5 py-1.5 text-xs font-mono">
+                </div>
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button onclick="closePaymentModal()" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded text-xs font-medium">Cancel</button>
+                    <button onclick="executePaymentProcess()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-bold shadow">
+                        Validate Payment & Mark Paid
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: NEW RECORD MODAL -->
+    <div id="newRecordModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-xl rounded-lg shadow-2xl overflow-hidden border border-gray-300">
+            <div class="bg-odoo-purple text-white px-4 py-3 flex justify-between items-center">
+                <h3 class="font-bold text-sm"><i class="fa-solid fa-circle-plus mr-2"></i>Create New Sales Order</h3>
+                <button onclick="closeNewRecordModal()" class="text-white/80 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-4 space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Customer / Buyer</label>
+                        <select id="newCustomerSelect" class="w-full border border-gray-300 rounded px-2.5 py-1.5 text-xs">
+                            <option>Lulu International (Abu Dhabi)</option>
+                            <option>West Zone Supermarket (Sharjah)</option>
+                            <option>Naivas Retail (Kenya)</option>
+                            <option>DMart Avenue Supermarts (India)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Port of Discharge</label>
+                        <input type="text" id="newPort" value="Jebel Ali (AEJEA)" class="w-full border border-gray-300 rounded px-2.5 py-1.5 text-xs">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Primary Product Selection</label>
+                    <select id="newProductSelect" class="w-full border border-gray-300 rounded px-2.5 py-1.5 text-xs">
+                        <option value="CZR010">CZR010 - Speedy Dori Vegetable Chopper (3 SS Blades) - ₹249 / $3.00</option>
+                        <option value="CZR002">CZR002 - Master Jumbo Fruit Juicer (ABS Heavy) - ₹499 / $6.00</option>
+                        <option value="CZR016">CZR016 - 16-in-1 Revolving Spice Rack (360° ABS) - ₹699 / $8.40</option>
+                        <option value="CZR044">CZR044 - Virgin Aluminium Non-Stick Cookware Set - ₹1,299 / $15.50</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Order Quantity (Boxes / Pcs)</label>
+                        <input type="number" id="newQty" value="1000" class="w-full border border-gray-300 rounded px-2.5 py-1.5 text-xs font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Incoterms</label>
+                        <select id="newIncoterms" class="w-full border border-gray-300 rounded px-2.5 py-1.5 text-xs">
+                            <option>FOB Mundra Port (INMUN1)</option>
+                            <option>CIF Jebel Ali (AEJEA)</option>
+                            <option>Ex-Factory GIDC Rajkot</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button onclick="closeNewRecordModal()" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded text-xs font-medium">Discard</button>
+                    <button onclick="saveNewOrderRecord()" class="px-4 py-1.5 bg-odoo-teal hover:bg-odoo-tealHover text-white rounded text-xs font-bold shadow">
+                        Save Sales Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // CZAR INTERNATIONAL ERP STATE & DEMO DATA STORE
+        // =========================================================================
+        const state = {
+            currentApp: 'sales', // 'dashboard', 'sales', 'export', 'import', 'inventory', 'partners', 'documents', 'invoices', 'reports'
+            viewMode: 'form',   // 'list', 'kanban', 'form'
+            selectedOrderId: 'SO-00842',
+            selectedShipmentId: 'EXP-00241',
+
+            // Key Performance Indicators
+            kpis: {
+                totalRevenueINR: 18450000,
+                totalRevenueUSD: 220958,
+                activeContainers: 4,
+                dutyDrawbackClaimed: 382400,
+                receivablesUSD: 42500,
+                receivablesINR: 3548750
+            },
+
+            // CZAR Actual Products Data
+            products: [
+                {
+                    code: 'CZR010',
+                    name: 'Speedy Dori Vegetable Chopper (3 SS Blades)',
+                    hsn: '3924.10.90',
+                    material: 'Food-Grade ABS Plastic + Stainless Steel 304',
+                    stockGIDC: 4200,
+                    reserved: 1500,
+                    reorder: 1000,
+                    unitCost: 110,
+                    priceINR: 249,
+                    priceUSD: 3.00,
+                    gstRate: 18,
+                    image: 'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?auto=format&fit=crop&w=300&q=80'
+                },
+                {
+                    code: 'CZR002',
+                    name: 'Master Jumbo Fruit Juicer (ABS Heavy Duty)',
+                    hsn: '8210.00.00',
+                    material: 'Heavy ABS Plastic Handle & Vacuum Base',
+                    stockGIDC: 2800,
+                    reserved: 800,
+                    reorder: 500,
+                    unitCost: 210,
+                    priceINR: 499,
+                    priceUSD: 6.00,
+                    gstRate: 18,
+                    image: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=300&q=80'
+                },
+                {
+                    code: 'CZR016',
+                    name: '16-in-1 Revolving Spice Rack (360° ABS)',
+                    hsn: '3924.10.10',
+                    material: 'BPA-Free Acrylic Jars + Revolving Stand',
+                    stockGIDC: 1950,
+                    reserved: 600,
+                    reorder: 400,
+                    unitCost: 290,
+                    priceINR: 699,
+                    priceUSD: 8.40,
+                    gstRate: 18,
+                    image: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=300&q=80'
+                },
+                {
+                    code: 'CZR044',
+                    name: 'Virgin Aluminium Non-Stick Cookware Set (3-Pc)',
+                    hsn: '7615.10.11',
+                    material: '3-Layer Teflon Coating Aluminium',
+                    stockGIDC: 850,
+                    reserved: 300,
+                    reorder: 200,
+                    unitCost: 580,
+                    priceINR: 1299,
+                    priceUSD: 15.50,
+                    gstRate: 12,
+                    image: 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?auto=format&fit=crop&w=300&q=80'
+                },
+                {
+                    code: 'CZR007',
+                    name: '12-in-1 Nicer Dicer & Vegetable Slicer',
+                    hsn: '8205.51.00',
+                    material: 'Polycarbonate Container + SS Blades',
+                    stockGIDC: 3100,
+                    reserved: 1000,
+                    reorder: 800,
+                    unitCost: 140,
+                    priceINR: 329,
+                    priceUSD: 3.95,
+                    gstRate: 18,
+                    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=300&q=80'
+                },
+                {
+                    code: 'CZR012',
+                    name: 'Stainless Steel Chilli & Dry Fruit Cutter',
+                    hsn: '8205.51.00',
+                    material: 'Mirror Finish Stainless Steel Body',
+                    stockGIDC: 5400,
+                    reserved: 2000,
+                    reorder: 1000,
+                    unitCost: 65,
+                    priceINR: 149,
+                    priceUSD: 1.80,
+                    gstRate: 18,
+                    image: 'https://images.unsplash.com/photo-1590794056226-77ef3a429598?auto=format&fit=crop&w=300&q=80'
+                },
+                {
+                    code: 'CZR033',
+                    name: 'Anti-Skid Heavy Duty Gas Cylinder Trolley',
+                    hsn: '3926.90.99',
+                    material: 'Virgin PP Polymer Wheels & Heavy Base',
+                    stockGIDC: 6100,
+                    reserved: 1200,
+                    reorder: 1500,
+                    unitCost: 95,
+                    priceINR: 219,
+                    priceUSD: 2.60,
+                    gstRate: 18,
+                    image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=300&q=80'
+                },
+                {
+                    code: 'CZR025',
+                    name: 'Power-Free Hand Blender & Beater',
+                    hsn: '8210.00.00',
+                    material: 'Gear System ABS Polymer Body',
+                    stockGIDC: 4800,
+                    reserved: 900,
+                    reorder: 1000,
+                    unitCost: 55,
+                    priceINR: 129,
+                    priceUSD: 1.55,
+                    gstRate: 18,
+                    image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=300&q=80'
+                }
+            ],
+
+            // Sales Orders Lifecycle Data
+            salesOrders: [
+                {
+                    id: 'SO-00842',
+                    customer: 'Al-Maya Supermarkets LLC',
+                    country: 'United Arab Emirates 🇦🇪',
+                    city: 'Dubai',
+                    date: '2026-10-02',
+                    incoterm: 'FOB Mundra Port (INMUN1)',
+                    portLoading: 'Mundra Port (INMUN1)',
+                    portDischarge: 'Jebel Ali Port (AEJEA)',
+                    currency: 'USD',
+                    totalUSD: 24800,
+                    totalINR: 2070800,
+                    status: 'Sales Order', // 'Draft', 'Quotation Sent', 'Sales Order', 'Shipped', 'Invoiced', 'Done'
+                    paymentStatus: 'Unpaid',
+                    lutNo: 'AD240324008192E (LUT Export)',
+                    shippingBillNo: 'SB-8829410',
+                    items: [
+                        { productCode: 'CZR010', name: 'Speedy Dori Chopper', qty: 5000, priceUSD: 3.00, lineTotalUSD: 15000 },
+                        { productCode: 'CZR016', name: '16-in-1 Spice Rack', qty: 1000, priceUSD: 8.40, lineTotalUSD: 8400 },
+                        { productCode: 'CZR025', name: 'Power-Free Hand Blender', qty: 900, priceUSD: 1.55, lineTotalUSD: 1400 }
+                    ]
+                },
+                {
+                    id: 'SO-00841',
+                    customer: 'Carrefour Hypermarkets East Africa',
+                    country: 'Kenya 🇰🇪',
+                    city: 'Nairobi',
+                    date: '2026-09-28',
+                    incoterm: 'CIF Mombasa Port (KEMBA)',
+                    portLoading: 'Mundra Port (INMUN1)',
+                    portDischarge: 'Mombasa (KEMBA)',
+                    currency: 'USD',
+                    totalUSD: 18200,
+                    totalINR: 1519700,
+                    status: 'Quotation Sent',
+                    paymentStatus: 'Pending LC',
+                    lutNo: 'AD240324008192E',
+                    shippingBillNo: 'Pending',
+                    items: [
+                        { productCode: 'CZR002', name: 'Master Jumbo Juicer', qty: 2000, priceUSD: 6.00, lineTotalUSD: 12000 },
+                        { productCode: 'CZR044', name: 'Non-Stick Cookware Set', qty: 400, priceUSD: 15.50, lineTotalUSD: 6200 }
+                    ]
+                },
+                {
+                    id: 'SO-00840',
+                    customer: 'Lulu Group International',
+                    country: 'Saudi Arabia 🇸🇦',
+                    city: 'Riyadh',
+                    date: '2026-09-20',
+                    incoterm: 'FOB Kandla Port (INKND)',
+                    portLoading: 'Kandla Port (INKND)',
+                    portDischarge: 'Jeddah Islamic Port (SAJED)',
+                    currency: 'USD',
+                    totalUSD: 31500,
+                    totalINR: 2630250,
+                    status: 'Invoiced',
+                    paymentStatus: 'Paid',
+                    lutNo: 'AD240324008192E',
+                    shippingBillNo: 'SB-7710294',
+                    items: [
+                        { productCode: 'CZR007', name: '12-in-1 Nicer Dicer', qty: 5000, priceUSD: 3.95, lineTotalUSD: 19750 },
+                        { productCode: 'CZR012', name: 'SS Chilli Cutter', qty: 6527, priceUSD: 1.80, lineTotalUSD: 11750 }
+                    ]
+                },
+                {
+                    id: 'SO-00839',
+                    customer: 'Reliance Retail Ventures Ltd',
+                    country: 'India 🇮🇳',
+                    city: 'Mumbai',
+                    date: '2026-09-15',
+                    incoterm: 'Ex-Factory GIDC Rajkot',
+                    portLoading: 'Domestic Road Logistics',
+                    portDischarge: 'Bhiwandi Warehouse Mumbai',
+                    currency: 'INR',
+                    totalUSD: 14910,
+                    totalINR: 1245000,
+                    status: 'Done',
+                    paymentStatus: 'Paid',
+                    lutNo: 'GSTIN 24AHYPJ7437M1ZI (18% IGST)',
+                    shippingBillNo: 'EWay-2810940129',
+                    items: [
+                        { productCode: 'CZR033', name: 'Gas Cylinder Trolley', qty: 3000, priceINR: 219, lineTotalINR: 657000 },
+                        { productCode: 'CZR010', name: 'Speedy Dori Chopper', qty: 2361, priceINR: 249, lineTotalINR: 588000 }
+                    ]
+                }
+            ],
+
+            // Export Shipments Control Tower Data
+            exportShipments: [
+                {
+                    id: 'EXP-00241',
+                    soId: 'SO-00842',
+                    containerNo: 'MSKU-9284012 (40ft High Cube)',
+                    vessel: 'MAERSK SENTOSA v.2409',
+                    shippingLine: 'Maersk Line India',
+                    blNo: 'MAEU982041920',
+                    shippingBill: 'SB-8829410 / 02-OCT-2026',
+                    portLoading: 'Mundra Port (INMUN1)',
+                    portDischarge: 'Jebel Ali (AEJEA)',
+                    dutyDrawbackAmount: 62124, // 3% of FOB
+                    stage: 'In Transit', // 'Factory Loading', 'Mundra Customs', 'On Board', 'In Transit', 'Discharged', 'Delivered'
+                    eta: '2026-10-12',
+                    buyer: 'Al-Maya Group Dubai'
+                },
+                {
+                    id: 'EXP-00240',
+                    soId: 'SO-00840',
+                    containerNo: 'TCLU-4102941 (20ft Standard)',
+                    vessel: 'MSC CAPUCINE v.8821',
+                    shippingLine: 'MSC Mediterranean Shipping',
+                    blNo: 'MSCC88102940',
+                    shippingBill: 'SB-7710294 / 21-SEP-2026',
+                    portLoading: 'Kandla Port (INKND)',
+                    portDischarge: 'Jeddah (SAJED)',
+                    dutyDrawbackAmount: 78900,
+                    stage: 'Discharged',
+                    eta: '2026-10-04',
+                    buyer: 'Lulu Group Riyadh'
+                }
+            ],
+
+            // Import Shipments (Raw Materials & Overseas Stock) Data
+            importShipments: [
+                {
+                    id: 'IMP-00109',
+                    vendor: 'Ningbo Precision Mold & Plastic Co. (China)',
+                    description: 'Stainless Steel Chopper Blades (SS304) & Gear Mechanism Parts',
+                    portImport: 'Nhava Sheva JNPT (INNSA)',
+                    billOfEntry: 'BE-9920149 / 29-SEP-2026',
+                    qty: 15000,
+                    targetProduct: 'CZR010',
+                    customsDutyPaid: 142500,
+                    status: 'Customs Cleared',
+                    receivedInStock: false
+                },
+                {
+                    id: 'IMP-00108',
+                    vendor: 'Zhejiang Polymer Resins Ltd (China)',
+                    description: 'Virgin ABS Food-Grade Granules (10 Tons)',
+                    portImport: 'Mundra Port (INMUN1)',
+                    billOfEntry: 'BE-8819204 / 15-SEP-2026',
+                    qty: 10000,
+                    targetProduct: 'CZR002',
+                    customsDutyPaid: 210000,
+                    status: 'Delivered to GIDC Rajkot',
+                    receivedInStock: true
+                }
+            ],
+
+            // Chatter Timeline Audit Log
+            chatterLogs: {
+                'SO-00842': [
+                    { date: '2026-10-02 10:15', user: 'CZAR Admin', text: 'Quotation sent to Al-Maya Dubai purchase department.' },
+                    { date: '2026-10-02 11:30', user: 'System', text: 'Order confirmed under Letter of Undertaking (LUT ARN: AD240324008192E).' },
+                    { date: '2026-10-02 14:00', user: 'GIDC Logistics', text: 'Container MSKU-9284012 loaded at Metoda Plant. Truck dispatched to Mundra Port.' }
+                ]
+            }
+        };
+
+        // =========================================================================
+        // APP SWITCHING & UI NAVIGATION LOGIC
+        // =========================================================================
+        function switchApp(appName) {
+            state.currentApp = appName;
+            
+            // Close app drawer if open
+            const drawer = document.getElementById('appGridDrawer');
+            if (drawer) drawer.classList.add('hidden');
+
+            // Update app title in top navbar
+            const appTitles = {
+                'dashboard': 'Dashboard & Key KPIs',
+                'sales': 'Sales Orders & Quotations',
+                'export': 'Export Control Tower (Mundra Logistics)',
+                'import': 'Import Shipments (Raw Materials)',
+                'inventory': 'Inventory Stock (GIDC Metoda Warehouse)',
+                'partners': 'Customers & Suppliers',
+                'documents': 'Customs & Export Document Hub',
+                'invoices': 'Invoices & Tax Payments',
+                'reports': 'Analytics & Export Reports'
+            };
+            document.getElementById('currentAppHeaderTitle').innerText = appTitles[appName] || appName;
+
+            // Render view according to app
+            renderMainWorkspace();
+        }
+
+        function toggleAppMenu() {
+            const drawer = document.getElementById('appGridDrawer');
+            drawer.classList.toggle('hidden');
+        }
+
+        function setViewMode(mode) {
+            state.viewMode = mode;
+            
+            // Highlight active view switcher button
+            ['List', 'Kanban', 'Form'].forEach(m => {
+                const btn = document.getElementById('viewBtn' + m);
+                if (btn) {
+                    if (m.toLowerCase() === mode) {
+                        btn.className = "px-2 py-1 rounded text-xs bg-white text-odoo-purple shadow-sm font-bold transition";
+                    } else {
+                        btn.className = "px-2 py-1 rounded text-xs text-gray-600 hover:text-odoo-purple hover:bg-white transition";
+                    }
+                }
+            });
+
+            renderMainWorkspace();
+        }
+
+        // =========================================================================
+        // MAIN WORKSPACE RENDER ENGINE
+        // =========================================================================
+        function renderMainWorkspace() {
+            const container = document.getElementById('appMainContent');
+            const primaryBtn = document.getElementById('btnPrimaryAction');
+            const printBtn = document.getElementById('btnPrintDocs');
+            
+            // Control Panel default visibility
+            primaryBtn.classList.add('hidden');
+            printBtn.classList.add('hidden');
+
+            if (state.currentApp === 'dashboard') {
+                renderDashboardView(container);
+            } else if (state.currentApp === 'sales') {
+                if (state.viewMode === 'form') {
+                    renderSalesOrderFormView(container);
+                    primaryBtn.classList.remove('hidden');
+                    primaryBtn.innerText = "Confirm Order";
+                    printBtn.classList.remove('hidden');
+                } else if (state.viewMode === 'list') {
+                    renderSalesOrderListView(container);
+                } else {
+                    renderSalesOrderKanbanView(container);
+                }
+            } else if (state.currentApp === 'export') {
+                renderExportControlTower(container);
+            } else if (state.currentApp === 'import') {
+                renderImportShipmentsView(container);
+            } else if (state.currentApp === 'inventory') {
+                renderInventoryView(container);
+            } else if (state.currentApp === 'partners') {
+                renderPartnersView(container);
+            } else if (state.currentApp === 'documents') {
+                renderDocumentsView(container);
+            } else if (state.currentApp === 'invoices') {
+                renderInvoicesView(container);
+            } else if (state.currentApp === 'reports') {
+                renderReportsView(container);
+            }
+        }
+
+        // =========================================================================
+        // 1. DASHBOARD VIEW
+        // =========================================================================
+        function renderDashboardView(container) {
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <!-- Top KPI Summary Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between">
+                            <div>
+                                <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">YTD Revenue (Exports)</div>
+                                <div class="text-xl font-bold text-gray-900 mt-1">₹${(state.kpis.totalRevenueINR / 10000000).toFixed(2)} Cr</div>
+                                <div class="text-[11px] text-emerald-600 font-semibold mt-1">
+                                    <i class="fa-solid fa-arrow-up-right mr-1"></i>$${state.kpis.totalRevenueUSD.toLocaleString()} USD
+                                </div>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-purple-100 text-odoo-purple flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-globe"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between">
+                            <div>
+                                <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Active Export Shipments</div>
+                                <div class="text-xl font-bold text-gray-900 mt-1">${state.kpis.activeContainers} Containers</div>
+                                <div class="text-[11px] text-blue-600 font-semibold mt-1">
+                                    <i class="fa-solid fa-anchor mr-1"></i>Mundra & Kandla Ports
+                                </div>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-ship"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between">
+                            <div>
+                                <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Duty Drawback (3% DBK)</div>
+                                <div class="text-xl font-bold text-emerald-700 mt-1">₹${(state.kpis.dutyDrawbackClaimed / 100000).toFixed(2)} Lakh</div>
+                                <div class="text-[11px] text-gray-500 mt-1">ICEGATE Customs Refund</div>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-indian-rupee-sign"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between">
+                            <div>
+                                <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Pending Receivables</div>
+                                <div id="kpiReceivables" class="text-xl font-bold text-amber-600 mt-1">$${state.kpis.receivablesUSD.toLocaleString()} USD</div>
+                                <div class="text-[11px] text-gray-500 mt-1">₹${(state.kpis.receivablesINR / 100000).toFixed(2)} Lakh</div>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Company Profile & Quick Actions Banner -->
+                    <div class="bg-gradient-to-r from-odoo-purple to-purple-900 text-white rounded-lg p-5 shadow flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                        <div class="space-y-1">
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-amber-400 text-black text-xs font-black px-2 py-0.5 rounded">CZAR INTERNATIONAL</span>
+                                <span class="text-purple-200 text-xs">GSTIN: 24AHYPJ7437M1ZI | IEC: 2413008920</span>
+                            </div>
+                            <h2 class="text-lg font-bold">Sanskar Heights HQ, 150ft Ring Road, Rajkot - 360004</h2>
+                            <p class="text-xs text-purple-200">Factory: GIDC Metoda | Export Ports: Mundra Port (INMUN1), Nhava Sheva (INNSA), Kandla (INKND)</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button onclick="switchApp('sales')" class="bg-odoo-teal hover:bg-teal-600 text-white px-3 py-1.5 rounded text-xs font-bold transition shadow">
+                                <i class="fa-solid fa-cart-plus mr-1"></i> New Sales Order
+                            </button>
+                            <button onclick="switchApp('export')" class="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded text-xs font-medium transition">
+                                <i class="fa-solid fa-compass mr-1"></i> Track Shipments
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Visual Chart Panels Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <!-- Chart 1: Export Revenue Breakdown by Country -->
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <h3 class="font-bold text-gray-800 text-sm mb-3 flex items-center justify-between">
+                                <span><i class="fa-solid fa-chart-pie text-odoo-purple mr-2"></i>Export Revenue Breakdown by Country</span>
+                                <span class="text-xs text-gray-400 font-normal">Q3 2026</span>
+                            </h3>
+                            <div class="h-56 relative">
+                                <canvas id="chartExportCountry"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Chart 2: Top Selling Kitchenware Products Stock & Sales -->
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <h3 class="font-bold text-gray-800 text-sm mb-3 flex items-center justify-between">
+                                <span><i class="fa-solid fa-chart-bar text-teal-600 mr-2"></i>Top CZAR Products Stock & Orders</span>
+                                <span class="text-xs text-gray-400 font-normal">Pcs in GIDC Warehouse</span>
+                            </h3>
+                            <div class="h-56 relative">
+                                <canvas id="chartProductStock"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Initialize Chart.js Instances
+            setTimeout(() => {
+                initDashboardCharts();
+            }, 50);
+        }
+
+        function initDashboardCharts() {
+            const ctx1 = document.getElementById('chartExportCountry');
+            if (ctx1) {
+                new Chart(ctx1, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['UAE (Dubai/Abu Dhabi)', 'Saudi Arabia (Riyadh)', 'Kenya (Nairobi)', 'India (Domestic)', 'USA / UK'],
+                        datasets: [{
+                            data: [42, 28, 16, 10, 4],
+                            backgroundColor: ['#714B67', '#00A09D', '#F59E0B', '#10B981', '#6366F1']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } }
+                    }
+                });
+            }
+
+            const ctx2 = document.getElementById('chartProductStock');
+            if (ctx2) {
+                new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: ['CZR010 Chopper', 'CZR002 Juicer', 'CZR016 Spice Rack', 'CZR007 Nicer Dicer', 'CZR033 Cylinder Trolley'],
+                        datasets: [
+                            { label: 'Available Stock', data: [4200, 2800, 1950, 3100, 6100], backgroundColor: '#00A09D' },
+                            { label: 'Reserved Orders', data: [1500, 800, 600, 1000, 1200], backgroundColor: '#F59E0B' }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { x: { ticks: { font: { size: 10 } } }, y: { ticks: { font: { size: 10 } } } },
+                        plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } } }
+                    }
+                });
+            }
+        }
+
+        // =========================================================================
+        // 2. SALES ORDER FORM DETAIL VIEW (ODOO SIGNATURE FORM)
+        // =========================================================================
+        function renderSalesOrderFormView(container) {
+            const order = state.salesOrders.find(o => o.id === state.selectedOrderId) || state.salesOrders[0];
+            
+            // Set Breadcrumb Title
+            document.getElementById('breadcrumbActiveItem').innerText = `${order.id} (${order.customer})`;
+
+            // Pipeline stages
+            const stages = ['Draft', 'Quotation Sent', 'Sales Order', 'Shipped', 'Invoiced', 'Done'];
+
+            container.innerHTML = `
+                <div class="max-w-5xl mx-auto space-y-4">
+                    <!-- ODOO PAPER SHEET DOCUMENT CONTAINER -->
+                    <div class="odoo-paper-sheet overflow-hidden">
+                        
+                        <!-- TOP STATUS PROGRESS PIPELINE RIBBON -->
+                        <div class="bg-gray-50 border-b border-gray-200 flex items-center justify-between flex-wrap overflow-x-auto">
+                            <!-- Action Buttons on Form Sheet -->
+                            <div class="px-4 py-2 flex items-center space-x-2">
+                                ${order.status !== 'Invoiced' && order.status !== 'Done' ? `
+                                    <button onclick="confirmCurrentOrder('${order.id}')" class="bg-odoo-teal hover:bg-odoo-tealHover text-white px-3 py-1 rounded text-xs font-bold transition shadow-sm">
+                                        Confirm Sales Order
+                                    </button>
+                                ` : ''}
+                                ${order.status === 'Sales Order' ? `
+                                    <button onclick="openPaymentModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded text-xs font-bold transition shadow-sm">
+                                        Create Export Invoice / Record Payment
+                                    </button>
+                                ` : ''}
+                                <button onclick="openPrintModalForSO('${order.id}')" class="bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 px-3 py-1 rounded text-xs font-medium transition flex items-center space-x-1">
+                                    <i class="fa-solid fa-file-pdf text-red-600"></i>
+                                    <span>Print Commercial Invoice & LUT</span>
+                                </button>
+                            </div>
+
+                            <!-- Odoo Pipeline Ribbon Steps -->
+                            <div class="flex items-center text-xs font-medium border-l border-gray-200">
+                                ${stages.map((st, idx) => {
+                                    const isCurrent = order.status === st;
+                                    const isCompleted = stages.indexOf(order.status) > idx;
+                                    return `
+                                        <div class="status-pipeline-step ${isCurrent ? 'active' : (isCompleted ? 'completed' : '')}" onclick="updateOrderStatus('${order.id}', '${st}')">
+                                            <span>${st}</span>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+
+                        <!-- ODOO SMART BUTTONS BAR -->
+                        <div class="p-4 border-b border-gray-100 flex flex-wrap gap-2 justify-end bg-gray-50/50">
+                            <button onclick="switchApp('export')" class="smart-btn hover:border-odoo-teal group">
+                                <span class="text-[10px] text-gray-400 font-bold uppercase">Shipments</span>
+                                <span class="text-xs font-bold text-odoo-purple group-hover:text-odoo-teal flex items-center">
+                                    <i class="fa-solid fa-truck-fast mr-1"></i> 1 Delivery (Mundra)
+                                </span>
+                            </button>
+
+                            <button onclick="switchApp('invoices')" class="smart-btn hover:border-emerald-500 group">
+                                <span class="text-[10px] text-gray-400 font-bold uppercase">Invoices</span>
+                                <span class="text-xs font-bold text-emerald-700 flex items-center">
+                                    <i class="fa-solid fa-receipt mr-1"></i> ${order.paymentStatus === 'Paid' ? 'Paid (FIRC)' : '1 Pending Invoice'}
+                                </span>
+                            </button>
+
+                            <button onclick="openPrintModalForSO('${order.id}')" class="smart-btn hover:border-blue-500 group">
+                                <span class="text-[10px] text-gray-400 font-bold uppercase">Export Docs</span>
+                                <span class="text-xs font-bold text-blue-600 flex items-center">
+                                    <i class="fa-solid fa-folder-open mr-1"></i> 5 Customs Docs
+                                </span>
+                            </button>
+                        </div>
+
+                        <!-- FORM HEADER CONTENT -->
+                        <div class="p-6 space-y-6">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <span class="text-xs font-mono font-bold text-odoo-teal uppercase tracking-widest">EXPORT SALES ORDER</span>
+                                    <h1 class="text-2xl font-black text-gray-900">${order.id}</h1>
+                                </div>
+                                <div class="text-right">
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold ${order.paymentStatus === 'Paid' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-800 border border-amber-300'}">
+                                        ● ${order.paymentStatus}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- FORM MAIN FIELDS GRID -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50/70 p-4 rounded-lg border border-gray-200/80">
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase">Customer / Foreign Buyer</label>
+                                        <div class="text-sm font-bold text-gray-900 mt-0.5">${order.customer}</div>
+                                        <div class="text-xs text-gray-500">${order.city}, ${order.country}</div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase">Incoterm & Delivery Terms</label>
+                                        <div class="text-xs font-semibold text-gray-800 mt-0.5">${order.incoterm}</div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase">Port of Loading (India)</label>
+                                        <div class="text-xs font-semibold text-odoo-purple mt-0.5">⚓ ${order.portLoading}</div>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase">Order Date</label>
+                                        <div class="text-xs font-medium text-gray-800 mt-0.5">${order.date}</div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase">Indian Customs LUT ARN Number</label>
+                                        <div class="text-xs font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block mt-0.5">
+                                            ${order.lutNo}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase">Port of Discharge (Destination)</label>
+                                        <div class="text-xs font-semibold text-blue-700 mt-0.5">🏁 ${order.portDischarge}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- FORM ORDER LINE ITEMS TAB TABLE -->
+                            <div>
+                                <h3 class="font-bold text-gray-800 text-sm mb-2 border-b pb-1">Order Line Items (CZAR Products)</h3>
+                                <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                                    <table class="w-full text-left text-xs">
+                                        <thead class="bg-gray-100 text-gray-600 font-semibold border-b border-gray-200">
+                                            <tr>
+                                                <th class="p-2.5">Product Code</th>
+                                                <th class="p-2.5">Description</th>
+                                                <th class="p-2.5 text-center">HSN Code</th>
+                                                <th class="p-2.5 text-right">Quantity</th>
+                                                <th class="p-2.5 text-right">Unit Price (USD)</th>
+                                                <th class="p-2.5 text-right">Line Total (USD)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-200">
+                                            ${order.items.map(it => {
+                                                const pObj = state.products.find(p => p.code === it.productCode) || {};
+                                                return `
+                                                    <tr class="hover:bg-gray-50">
+                                                        <td class="p-2.5 font-bold text-odoo-purple">${it.productCode}</td>
+                                                        <td class="p-2.5 font-medium text-gray-800">${it.name}</td>
+                                                        <td class="p-2.5 text-center font-mono text-gray-500">${pObj.hsn || '3924.10.90'}</td>
+                                                        <td class="p-2.5 text-right font-bold">${it.qty.toLocaleString()} pcs</td>
+                                                        <td class="p-2.5 text-right font-mono">$${it.priceUSD.toFixed(2)}</td>
+                                                        <td class="p-2.5 text-right font-mono font-bold text-gray-900">$${it.lineTotalUSD.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                                                    </tr>
+                                                `;
+                                            }).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- TOTALS SECTION -->
+                                <div class="flex justify-end mt-4">
+                                    <div class="w-full max-w-xs space-y-1 text-xs">
+                                        <div class="flex justify-between py-1 border-b border-gray-200 text-gray-600">
+                                            <span>Subtotal (FOB Value):</span>
+                                            <span class="font-bold font-mono">$${order.totalUSD.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                                        </div>
+                                        <div class="flex justify-between py-1 border-b border-gray-200 text-emerald-700">
+                                            <span>IGST Tax under LUT (0% Export):</span>
+                                            <span class="font-mono">₹0.00</span>
+                                        </div>
+                                        <div class="flex justify-between py-1.5 text-base font-black text-odoo-purple border-b-2 border-odoo-purple">
+                                            <span>Grand Total (USD):</span>
+                                            <span class="font-mono">$${order.totalUSD.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                                        </div>
+                                        <div class="text-right text-[11px] text-gray-500 pt-1 font-mono">
+                                            INR Equivalent: ₹${order.totalINR.toLocaleString('en-IN')} (RBI Rate @ 83.50)
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- ODOO CHATTER / TIMELINE HISTORY SECTION -->
+                        <div class="bg-gray-50 p-6 border-t border-gray-200 space-y-4">
+                            <div class="flex items-center justify-between border-b pb-2">
+                                <h3 class="font-bold text-gray-700 text-xs uppercase tracking-wider">
+                                    <i class="fa-solid fa-comments text-odoo-purple mr-1"></i> Odoo Chatter & Activity History
+                                </h3>
+                                <button onclick="addChatterLog('${order.id}')" class="text-xs text-odoo-teal hover:underline font-bold">
+                                    + Send Message / Log Note
+                                </button>
+                            </div>
+
+                            <div class="space-y-3" id="chatterLogsContainer">
+                                ${(state.chatterLogs[order.id] || []).map(log => `
+                                    <div class="flex space-x-3 text-xs bg-white p-3 rounded border border-gray-200 shadow-2xs">
+                                        <div class="w-7 h-7 rounded-full bg-purple-100 text-odoo-purple flex items-center justify-center font-bold text-[10px] shrink-0">
+                                            ${log.user.substring(0, 2).toUpperCase()}
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="flex items-center justify-between">
+                                                <span class="font-bold text-gray-800">${log.user}</span>
+                                                <span class="text-[10px] text-gray-400">${log.date}</span>
+                                            </div>
+                                            <p class="text-gray-600 mt-0.5">${log.text}</p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            `;
+        }
+
+        // =========================================================================
+        // 2b. SALES ORDER LIST & KANBAN VIEWS
+        // =========================================================================
+        function renderSalesOrderListView(container) {
+            container.innerHTML = `
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-gray-100 text-gray-600 font-semibold border-b border-gray-200">
+                            <tr>
+                                <th class="p-3">Order Number</th>
+                                <th class="p-3">Customer / Buyer</th>
+                                <th class="p-3">Country</th>
+                                <th class="p-3">Port Loading</th>
+                                <th class="p-3">Order Date</th>
+                                <th class="p-3 text-right">Total (USD)</th>
+                                <th class="p-3 text-center">Status</th>
+                                <th class="p-3 text-center">Payment</th>
+                                <th class="p-3 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            ${state.salesOrders.map(so => `
+                                <tr class="hover:bg-purple-50/50 cursor-pointer transition" onclick="openOrderForm('${so.id}')">
+                                    <td class="p-3 font-bold text-odoo-purple">${so.id}</td>
+                                    <td class="p-3 font-semibold text-gray-800">${so.customer}</td>
+                                    <td class="p-3 text-gray-600">${so.country}</td>
+                                    <td class="p-3 font-mono text-gray-500 text-[11px]">${so.portLoading}</td>
+                                    <td class="p-3 text-gray-500">${so.date}</td>
+                                    <td class="p-3 text-right font-bold font-mono">$${so.totalUSD.toLocaleString()}</td>
+                                    <td class="p-3 text-center">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-odoo-purple">
+                                            ${so.status}
+                                        </span>
+                                    </td>
+                                    <td class="p-3 text-center">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${so.paymentStatus === 'Paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                                            ${so.paymentStatus}
+                                        </span>
+                                    </td>
+                                    <td class="p-3 text-right">
+                                        <button onclick="event.stopPropagation(); openOrderForm('${so.id}')" class="text-xs text-odoo-teal hover:underline font-bold">
+                                            Open Form →
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderSalesOrderKanbanView(container) {
+            container.innerHTML = `
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    ${state.salesOrders.map(so => `
+                        <div onclick="openOrderForm('${so.id}')" class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-odoo-teal transition cursor-pointer flex flex-col justify-between space-y-3">
+                            <div class="space-y-1">
+                                <div class="flex justify-between items-start">
+                                    <span class="font-black text-odoo-purple text-sm">${so.id}</span>
+                                    <span class="text-[10px] bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded font-bold">${so.status}</span>
+                                </div>
+                                <h4 class="font-bold text-gray-900 text-xs">${so.customer}</h4>
+                                <p class="text-[11px] text-gray-500">${so.country}</p>
+                            </div>
+
+                            <div class="pt-2 border-t border-gray-100 flex justify-between items-center text-xs">
+                                <div>
+                                    <div class="text-[10px] text-gray-400">Total USD</div>
+                                    <div class="font-mono font-bold text-emerald-700">$${so.totalUSD.toLocaleString()}</div>
+                                </div>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${so.paymentStatus === 'Paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                                    ${so.paymentStatus}
+                                </span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // =========================================================================
+        // 3. EXPORT SHIPMENTS CONTROL TOWER VIEW
+        // =========================================================================
+        function renderExportControlTower(container) {
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <!-- Control Tower Title Banner -->
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-wrap justify-between items-center gap-2">
+                        <div>
+                            <h2 class="text-base font-bold text-gray-800 flex items-center space-x-2">
+                                <span>🚢 Export Container Logistics & Customs Tower</span>
+                                <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-0.5 rounded">Mundra Port INMUN1</span>
+                            </h2>
+                            <p class="text-xs text-gray-500">Track containers from Rajkot Metoda Factory to overseas destination discharge ports.</p>
+                        </div>
+                        <div class="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded border border-emerald-200">
+                            Total Duty Drawback Claimed: ₹${state.kpis.dutyDrawbackClaimed.toLocaleString('en-IN')} (3% DBK)
+                        </div>
+                    </div>
+
+                    <!-- Active Shipments Cards Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${state.exportShipments.map(sh => `
+                            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 space-y-4">
+                                <div class="flex justify-between items-start border-b pb-3">
+                                    <div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="font-black text-odoo-purple text-base">${sh.id}</span>
+                                            <span class="text-xs bg-gray-100 font-mono px-2 py-0.5 rounded font-bold">${sh.containerNo}</span>
+                                        </div>
+                                        <div class="text-xs font-bold text-gray-800 mt-1">Buyer: ${sh.buyer} (${sh.soId})</div>
+                                    </div>
+                                    <button onclick="advanceShipmentStage('${sh.id}')" class="bg-odoo-teal hover:bg-teal-600 text-white px-2.5 py-1 rounded text-xs font-bold shadow transition">
+                                        Advance Stage ➔
+                                    </button>
+                                </div>
+
+                                <!-- Logistics Timeline Stage Tracker -->
+                                <div>
+                                    <div class="text-[11px] font-bold text-gray-500 mb-1">Current Logistics Stage:</div>
+                                    <div class="bg-odoo-purple text-white p-2 rounded text-xs font-bold flex items-center justify-between">
+                                        <span><i class="fa-solid fa-ship mr-1.5 text-teal-300"></i>${sh.stage}</span>
+                                        <span class="text-[10px] text-purple-200 font-normal">ETA: ${sh.eta}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Shipping & Customs Details -->
+                                <div class="grid grid-cols-2 gap-2 text-xs bg-gray-50 p-3 rounded border border-gray-200/80 font-mono">
+                                    <div>
+                                        <span class="text-gray-400 block text-[10px]">Vessel & Line:</span>
+                                        <span class="font-bold text-gray-800">${sh.vessel}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-400 block text-[10px]">Bill of Lading (B/L):</span>
+                                        <span class="font-bold text-blue-700">${sh.blNo}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-400 block text-[10px]">Shipping Bill No:</span>
+                                        <span class="font-bold text-gray-800">${sh.shippingBill}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-400 block text-[10px]">3% Duty Drawback:</span>
+                                        <span class="font-bold text-emerald-700">₹${sh.dutyDrawbackAmount.toLocaleString('en-IN')}</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-end space-x-2 pt-1">
+                                    <button onclick="openPrintModalForSO('${sh.soId}')" class="text-xs text-odoo-purple hover:underline font-bold">
+                                        <i class="fa-solid fa-print mr-1"></i> Print Bill of Lading & Shipping Bill
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // =========================================================================
+        // 4. IMPORT SHIPMENTS & RAW MATERIAL RECEIVING
+        // =========================================================================
+        function renderImportShipmentsView(container) {
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                        <h2 class="text-base font-bold text-gray-800 flex items-center space-x-2">
+                            <span>📦 Import Shipments & Overseas Parts Procurement</span>
+                            <span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded">Customs B/E Clearing</span>
+                        </h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Receive imported raw components (stainless steel blades, ABS polymers) to update Rajkot warehouse stock live.</p>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-gray-100 text-gray-600 font-semibold border-b border-gray-200">
+                                <tr>
+                                    <th class="p-3">Import PO</th>
+                                    <th class="p-3">Supplier Vendor</th>
+                                    <th class="p-3">Items / Materials</th>
+                                    <th class="p-3 text-center">Port of Entry</th>
+                                    <th class="p-3 text-center">Bill of Entry (B/E)</th>
+                                    <th class="p-3 text-right">Quantity</th>
+                                    <th class="p-3 text-center">Warehouse Status</th>
+                                    <th class="p-3 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                ${state.importShipments.map(imp => `
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="p-3 font-bold text-odoo-purple">${imp.id}</td>
+                                        <td class="p-3 font-semibold text-gray-800">${imp.vendor}</td>
+                                        <td class="p-3 text-gray-600">${imp.description}</td>
+                                        <td class="p-3 text-center font-mono text-gray-500">${imp.portImport}</td>
+                                        <td class="p-3 text-center font-mono text-blue-700 font-semibold">${imp.billOfEntry}</td>
+                                        <td class="p-3 text-right font-bold">${imp.qty.toLocaleString()} pcs</td>
+                                        <td class="p-3 text-center">
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${imp.receivedInStock ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                                                ${imp.receivedInStock ? 'Stock Added (GIDC)' : 'Customs Cleared'}
+                                            </span>
+                                        </td>
+                                        <td class="p-3 text-right">
+                                            ${!imp.receivedInStock ? `
+                                                <button onclick="receiveImportGoods('${imp.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded text-xs font-bold shadow transition">
+                                                    ⚡ Receive Stock
+                                                </button>
+                                            ` : `
+                                                <span class="text-xs text-gray-400 font-bold"><i class="fa-solid fa-check-double text-emerald-600 mr-1"></i>Completed</span>
+                                            `}
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        // =========================================================================
+        // 5. INVENTORY STOCK MANAGEMENT (RAJKOT CENTRAL WAREHOUSE)
+        // =========================================================================
+        function renderInventoryView(container) {
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <!-- Warehouse Header -->
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-wrap justify-between items-center gap-2">
+                        <div>
+                            <h2 class="text-base font-bold text-gray-800 flex items-center space-x-2">
+                                <span>🏭 GIDC Metoda Central Warehouse Inventory</span>
+                                <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-0.5 rounded">Rajkot, Gujarat</span>
+                            </h2>
+                            <p class="text-xs text-gray-500">Live stock count, reserved quantities for export containers, and reorder triggers.</p>
+                        </div>
+                        <button onclick="alert('Stock Adjustment Modal Initiated for GIDC Plant')" class="bg-odoo-purple hover:bg-odoo-darkPurple text-white px-3 py-1.5 rounded text-xs font-bold shadow transition">
+                            <i class="fa-solid fa-boxes-packing mr-1"></i> Stock Adjustment
+                        </button>
+                    </div>
+
+                    <!-- Products Inventory Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        ${state.products.map(p => `
+                            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition flex flex-col justify-between">
+                                <div>
+                                    <div class="h-32 bg-gray-100 relative overflow-hidden">
+                                        <img src="${p.image}" class="w-full h-full object-cover" alt="${p.name}">
+                                        <span class="absolute top-2 left-2 bg-odoo-purple text-white font-mono font-bold text-[10px] px-2 py-0.5 rounded">
+                                            ${p.code}
+                                        </span>
+                                        <span class="absolute top-2 right-2 bg-black/70 text-white font-mono text-[10px] px-2 py-0.5 rounded">
+                                            HSN: ${p.hsn}
+                                        </span>
+                                    </div>
+                                    <div class="p-3 space-y-2">
+                                        <h3 class="font-bold text-gray-900 text-xs leading-snug line-clamp-2">${p.name}</h3>
+                                        <div class="text-[11px] text-gray-500 font-medium">${p.material}</div>
+                                        
+                                        <div class="grid grid-cols-2 gap-2 bg-gray-50 p-2 rounded border border-gray-100 text-xs">
+                                            <div>
+                                                <span class="text-gray-400 text-[10px] block">On Hand Stock:</span>
+                                                <span class="font-bold text-emerald-700 text-sm font-mono">${p.stockGIDC.toLocaleString()} pcs</span>
+                                            </div>
+                                            <div>
+                                                <span class="text-gray-400 text-[10px] block">Reserved Export:</span>
+                                                <span class="font-bold text-amber-600 text-sm font-mono">${p.reserved.toLocaleString()} pcs</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="p-3 bg-gray-50/80 border-t border-gray-100 flex justify-between items-center text-xs">
+                                    <div>
+                                        <span class="text-[10px] text-gray-400">Export FOB Price:</span>
+                                        <span class="font-bold font-mono text-gray-900 block">$${p.priceUSD.toFixed(2)} (₹${p.priceINR})</span>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold ${p.stockGIDC > p.reorder ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
+                                        ${p.stockGIDC > p.reorder ? 'In Stock' : 'Reorder Alert'}
+                                    </span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // =========================================================================
+        // 6. CUSTOMERS & SUPPLIERS VIEW
+        // =========================================================================
+        function renderPartnersView(container) {
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                        <h2 class="text-base font-bold text-gray-800">👥 Overseas Buyers & Local Vendor Directory</h2>
+                        <p class="text-xs text-gray-500">Commercial buyer profiles in Dubai, Saudi Arabia, Kenya, and Indian raw material vendors.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 space-y-2">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 font-black flex items-center justify-center">AM</div>
+                                <div>
+                                    <h3 class="font-bold text-xs text-gray-900">Al-Maya Supermarkets LLC</h3>
+                                    <div class="text-[11px] text-gray-500">Dubai, United Arab Emirates 🇦🇪</div>
+                                </div>
+                            </div>
+                            <div class="text-xs space-y-1 text-gray-600 pt-2 border-t border-gray-100">
+                                <div><b>Port:</b> Jebel Ali (AEJEA)</div>
+                                <div><b>Total YTD Orders:</b> $124,500 USD</div>
+                                <div><b>Payment Terms:</b> Letter of Credit / 30 Days</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 space-y-2">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-full bg-purple-100 text-odoo-purple font-black flex items-center justify-center">LU</div>
+                                <div>
+                                    <h3 class="font-bold text-xs text-gray-900">Lulu Group International</h3>
+                                    <div class="text-[11px] text-gray-500">Riyadh, Saudi Arabia 🇸🇦</div>
+                                </div>
+                            </div>
+                            <div class="text-xs space-y-1 text-gray-600 pt-2 border-t border-gray-100">
+                                <div><b>Port:</b> Jeddah Islamic Port (SAJED)</div>
+                                <div><b>Total YTD Orders:</b> $210,000 USD</div>
+                                <div><b>Payment Terms:</b> Advance Wire Transfer</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 space-y-2">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-800 font-black flex items-center justify-center">NP</div>
+                                <div>
+                                    <h3 class="font-bold text-xs text-gray-900">Ningbo Precision Mold Co.</h3>
+                                    <div class="text-[11px] text-gray-500">Zhejiang, China 🇨🇳 (Supplier)</div>
+                                </div>
+                            </div>
+                            <div class="text-xs space-y-1 text-gray-600 pt-2 border-t border-gray-100">
+                                <div><b>Material:</b> SS Blades & Plastic Injection Molds</div>
+                                <div><b>Import Port:</b> Nhava Sheva (INNSA)</div>
+                                <div><b>Customs Agent:</b> Rajkot Customs Freight</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // =========================================================================
+        // 7. CUSTOMS & EXPORT DOCUMENT HUB
+        // =========================================================================
+        function renderDocumentsView(container) {
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                        <h2 class="text-base font-bold text-gray-800">📄 Customs & Export Shipping Document Hub</h2>
+                        <p class="text-xs text-gray-500">Generate, view, and print Indian GST, Shipping Bill, Bill of Lading, and Certificate of Origin documents.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div onclick="openPrintModalForSO('SO-00842')" class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:border-odoo-purple transition cursor-pointer flex items-center space-x-3">
+                            <div class="w-12 h-12 rounded bg-red-100 text-red-600 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-file-pdf"></i></div>
+                            <div>
+                                <h3 class="font-bold text-xs text-gray-900">Commercial Invoice (SO-00842)</h3>
+                                <div class="text-[11px] text-gray-500">Al-Maya Dubai • $24,800</div>
+                                <div class="text-[10px] text-emerald-600 font-bold mt-1">Ready for Print 🖨️</div>
+                            </div>
+                        </div>
+
+                        <div onclick="openPrintModalForSO('SO-00842')" class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:border-odoo-purple transition cursor-pointer flex items-center space-x-3">
+                            <div class="w-12 h-12 rounded bg-blue-100 text-blue-600 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-ship"></i></div>
+                            <div>
+                                <h3 class="font-bold text-xs text-gray-900">Bill of Lading Draft (MAEU982)</h3>
+                                <div class="text-[11px] text-gray-500">Maersk Line • Mundra to Jebel Ali</div>
+                                <div class="text-[10px] text-blue-600 font-bold mt-1">Container MSKU-9284012</div>
+                            </div>
+                        </div>
+
+                        <div onclick="openPrintModalForSO('SO-00842')" class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:border-odoo-purple transition cursor-pointer flex items-center space-x-3">
+                            <div class="w-12 h-12 rounded bg-amber-100 text-amber-700 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-stamp"></i></div>
+                            <div>
+                                <h3 class="font-bold text-xs text-gray-900">FIEO Certificate of Origin</h3>
+                                <div class="text-[11px] text-gray-500">Govt of India Export Board</div>
+                                <div class="text-[10px] text-amber-700 font-bold mt-1">Origin: Rajkot, Gujarat</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // =========================================================================
+        // 8. INVOICES & FINANCE VIEW
+        // =========================================================================
+        function renderInvoicesView(container) {
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center">
+                        <div>
+                            <h2 class="text-base font-bold text-gray-800">💳 Invoices & Bank Realization (FIRC)</h2>
+                            <p class="text-xs text-gray-500">Manage export tax invoices under Letter of Undertaking (LUT) and track bank wire payments.</p>
+                        </div>
+                        <button onclick="openPaymentModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-xs font-bold shadow">
+                            + Record Payment
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-gray-100 text-gray-600 font-semibold border-b border-gray-200">
+                                <tr>
+                                    <th class="p-3">Invoice No</th>
+                                    <th class="p-3">Sales Order</th>
+                                    <th class="p-3">Customer</th>
+                                    <th class="p-3">LUT Certificate</th>
+                                    <th class="p-3 text-right">Amount USD</th>
+                                    <th class="p-3 text-right">Amount INR</th>
+                                    <th class="p-3 text-center">Payment Status</th>
+                                    <th class="p-3 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                ${state.salesOrders.map(so => `
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="p-3 font-bold text-odoo-purple">INV-${so.id.replace('SO-', '')}</td>
+                                        <td class="p-3 font-semibold text-gray-700">${so.id}</td>
+                                        <td class="p-3 font-bold text-gray-900">${so.customer}</td>
+                                        <td class="p-3 font-mono text-[10px] text-emerald-700">${so.lutNo}</td>
+                                        <td class="p-3 text-right font-mono font-bold">$${so.totalUSD.toLocaleString()}</td>
+                                        <td class="p-3 text-right font-mono text-gray-600">₹${so.totalINR.toLocaleString('en-IN')}</td>
+                                        <td class="p-3 text-center">
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${so.paymentStatus === 'Paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                                                ${so.paymentStatus}
+                                            </span>
+                                        </td>
+                                        <td class="p-3 text-right">
+                                            ${so.paymentStatus !== 'Paid' ? `
+                                                <button onclick="openPaymentModal()" class="text-xs bg-emerald-600 text-white font-bold px-2 py-0.5 rounded">
+                                                    Record Pay
+                                                </button>
+                                            ` : `
+                                                <span class="text-[11px] text-emerald-700 font-mono font-bold">FIRC Verified ✓</span>
+                                            `}
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        // =========================================================================
+        // 9. REPORTS & ANALYTICS VIEW
+        // =========================================================================
+        function renderReportsView(container) {
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                        <h2 class="text-base font-bold text-gray-800">📈 Export Turnover & GST Return Analytics</h2>
+                        <p class="text-xs text-gray-500">Summary reports for GSTR-1 Table 6A (Zero Rated Exports) & ICEGATE Duty Drawback realization.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 space-y-3">
+                            <h3 class="font-bold text-xs text-gray-700 uppercase">GSTR-1 Export Summary (Table 6A)</h3>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex justify-between py-1 border-b">
+                                    <span>Total Zero-Rated Export Invoices:</span>
+                                    <span class="font-bold">₹1.84 Crore</span>
+                                </div>
+                                <div class="flex justify-between py-1 border-b">
+                                    <span>Export Under LUT (Letter of Undertaking):</span>
+                                    <span class="font-bold text-emerald-700">100% Compliant</span>
+                                </div>
+                                <div class="flex justify-between py-1">
+                                    <span>Shipping Bills Realized on ICEGATE:</span>
+                                    <span class="font-bold">4 / 4 Verified</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 space-y-3">
+                            <h3 class="font-bold text-xs text-gray-700 uppercase">Port Logistics Turnaround Time</h3>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex justify-between py-1 border-b">
+                                    <span>Rajkot Factory to Mundra Port Gate-In:</span>
+                                    <span class="font-bold">14 Hours</span>
+                                </div>
+                                <div class="flex justify-between py-1 border-b">
+                                    <span>Customs Clearance at INMUN1:</span>
+                                    <span class="font-bold">6 Hours</span>
+                                </div>
+                                <div class="flex justify-between py-1">
+                                    <span>Transit Time Mundra -> Jebel Ali Dubai:</span>
+                                    <span class="font-bold">4 Days</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // =========================================================================
+        // INTERACTIVE ACTIONS & HANDLERS
+        // =========================================================================
+        function openOrderForm(orderId) {
+            state.selectedOrderId = orderId;
+            state.currentApp = 'sales';
+            setViewMode('form');
+        }
+
+        function updateOrderStatus(orderId, newStatus) {
+            const order = state.salesOrders.find(o => o.id === orderId);
+            if (order) {
+                order.status = newStatus;
+                
+                // Add log to chatter
+                if (!state.chatterLogs[orderId]) state.chatterLogs[orderId] = [];
+                state.chatterLogs[orderId].unshift({
+                    date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                    user: 'CZAR Admin',
+                    text: `Stage changed to "${newStatus}"`
+                });
+
+                renderMainWorkspace();
+            }
+        }
+
+        function confirmCurrentOrder(orderId) {
+            updateOrderStatus(orderId, 'Sales Order');
+        }
+
+        function advanceShipmentStage(shipmentId) {
+            const sh = state.exportShipments.find(s => s.id === shipmentId);
+            if (sh) {
+                const stages = ['Factory Loading', 'Mundra Customs', 'On Board Vessel', 'In Transit', 'Discharged', 'Delivered'];
+                const curIdx = stages.indexOf(sh.stage);
+                if (curIdx < stages.length - 1) {
+                    sh.stage = stages[curIdx + 1];
+                    alert(`Shipment ${shipmentId} container updated to stage: "${sh.stage}"!`);
+                    renderMainWorkspace();
+                }
+            }
+        }
+
+        function receiveImportGoods(importId) {
+            const imp = state.importShipments.find(i => i.id === importId);
+            if (imp && !imp.receivedInStock) {
+                imp.receivedInStock = true;
+                
+                // Add stock to target product
+                const p = state.products.find(prod => prod.code === imp.targetProduct);
+                if (p) {
+                    p.stockGIDC += imp.qty;
+                }
+
+                alert(`SUCCESS! Received ${imp.qty.toLocaleString()} pcs into GIDC Metoda Central Warehouse stock live!`);
+                renderMainWorkspace();
+            }
+        }
+
+        function openPaymentModal() {
+            document.getElementById('paymentModal').classList.remove('hidden');
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+        }
+
+        function executePaymentProcess() {
+            const order = state.salesOrders.find(o => o.id === state.selectedOrderId) || state.salesOrders[0];
+            order.paymentStatus = 'Paid';
+            order.status = 'Invoiced';
+
+            // Reduce pending receivables KPI
+            state.kpis.receivablesUSD = 0;
+            state.kpis.receivablesINR = 0;
+
+            // Add chatter log
+            if (!state.chatterLogs[order.id]) state.chatterLogs[order.id] = [];
+            state.chatterLogs[order.id].unshift({
+                date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                user: 'HDFC Foreign Exchange Desk',
+                text: 'Export Wire payment $24,800 received. FIRC Certificate HDFC-EX-9982410-IN generated.'
+            });
+
+            closePaymentModal();
+            alert('Payment Verified! $24,800 credited and Receivables updated live.');
+            renderMainWorkspace();
+        }
+
+        function addChatterLog(orderId) {
+            const txt = prompt("Enter log note or update message:");
+            if (txt) {
+                if (!state.chatterLogs[orderId]) state.chatterLogs[orderId] = [];
+                state.chatterLogs[orderId].unshift({
+                    date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                    user: 'CZAR Admin',
+                    text: txt
+                });
+                renderMainWorkspace();
+            }
+        }
+
+        // =========================================================================
+        // PRINT MODAL & COMMERCIAL EXPORT INVOICE GENERATOR
+        // =========================================================================
+        function openPrintModalForSO(orderId) {
+            const order = state.salesOrders.find(o => o.id === orderId) || state.salesOrders[0];
+            const modal = document.getElementById('documentModal');
+            const docContent = document.getElementById('printableDocument');
+
+            docContent.innerHTML = `
+                <div class="border border-gray-400 p-6 space-y-4">
+                    <!-- Invoice Header -->
+                    <div class="flex justify-between items-start border-b-2 border-gray-800 pb-4">
+                        <div>
+                            <h1 class="text-xl font-black text-gray-900 tracking-tight">CZAR INTERNATIONAL</h1>
+                            <div class="text-xs text-gray-600 font-semibold mt-0.5">Exporter of Quality Kitchenware & Household Plastic Products</div>
+                            <div class="text-[11px] text-gray-500 mt-1 space-y-0.5">
+                                <div>Office 807, Sanskar Heights, 150ft Ring Road, Rajkot - 360004, Gujarat, India</div>
+                                <div>Factory: Plot 12, GIDC Metoda, Rajkot | Tel: +91 90546 32325</div>
+                                <div class="font-mono text-gray-800 font-bold">GSTIN: 24AHYPJ7437M1ZI | IEC: 2413008920</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="border border-gray-800 px-3 py-1 font-bold text-sm bg-gray-100 block mb-2">COMMERCIAL EXPORT INVOICE</span>
+                            <div class="font-mono text-xs font-bold">Invoice No: EXP-INV/${order.id}</div>
+                            <div class="text-xs text-gray-600">Date: ${order.date}</div>
+                            <div class="text-[10px] text-emerald-800 font-bold mt-1 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-300 inline-block">
+                                EXPORT UNDER LUT NO: ${order.lutNo}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Consignee Details -->
+                    <div class="grid grid-cols-2 gap-4 text-xs border border-gray-300 p-3 bg-gray-50">
+                        <div>
+                            <span class="font-bold uppercase text-gray-500 text-[10px] block">Consignee / Buyer (Overseas):</span>
+                            <div class="font-bold text-gray-900 text-sm mt-0.5">${order.customer}</div>
+                            <div class="text-gray-600">${order.city}, ${order.country}</div>
+                            <div class="text-gray-500 text-[11px] mt-1">Delivery Terms: ${order.incoterm}</div>
+                        </div>
+                        <div>
+                            <span class="font-bold uppercase text-gray-500 text-[10px] block">Customs Logistics Details:</span>
+                            <div class="text-gray-700 mt-0.5 font-mono">Port of Loading: <b>${order.portLoading}</b></div>
+                            <div class="text-gray-700 font-mono">Port of Discharge: <b>${order.portDischarge}</b></div>
+                            <div class="text-gray-700 font-mono">Shipping Bill No: <b>${order.shippingBillNo}</b></div>
+                        </div>
+                    </div>
+
+                    <!-- Items Table -->
+                    <table class="w-full text-left border-collapse border border-gray-300 text-xs">
+                        <thead>
+                            <tr class="bg-gray-200 text-gray-800 font-bold border-b border-gray-300">
+                                <th class="p-2 border border-gray-300">Item Code</th>
+                                <th class="p-2 border border-gray-300">Description of Goods</th>
+                                <th class="p-2 border border-gray-300 text-center">HSN Code</th>
+                                <th class="p-2 border border-gray-300 text-right">Quantity</th>
+                                <th class="p-2 border border-gray-300 text-right">Rate (USD)</th>
+                                <th class="p-2 border border-gray-300 text-right">Amount (USD)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${order.items.map(i => `
+                                <tr>
+                                    <td class="p-2 border border-gray-300 font-bold font-mono">${i.productCode}</td>
+                                    <td class="p-2 border border-gray-300 font-semibold">${i.name}</td>
+                                    <td class="p-2 border border-gray-300 text-center font-mono">3924.10.90</td>
+                                    <td class="p-2 border border-gray-300 text-right font-bold">${i.qty.toLocaleString()} pcs</td>
+                                    <td class="p-2 border border-gray-300 text-right font-mono">$${i.priceUSD.toFixed(2)}</td>
+                                    <td class="p-2 border border-gray-300 text-right font-mono font-bold">$${i.lineTotalUSD.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                        <tfoot>
+                            <tr class="bg-gray-100 font-bold">
+                                <td colspan="5" class="p-2 border border-gray-300 text-right">TOTAL FOB VALUE (USD):</td>
+                                <td class="p-2 border border-gray-300 text-right font-mono text-sm text-odoo-purple">$${order.totalUSD.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <!-- Declarations & Signatures -->
+                    <div class="grid grid-cols-2 gap-4 pt-4 text-[10px] text-gray-600">
+                        <div>
+                            <span class="font-bold text-gray-800 block">Declaration:</span>
+                            We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct. Export under Letter of Undertaking without payment of IGST.
+                        </div>
+                        <div class="text-right flex flex-col items-end justify-end">
+                            <div class="border-b border-gray-400 w-48 mb-1"></div>
+                            <span class="font-bold text-gray-900">For CZAR INTERNATIONAL</span>
+                            <span>Authorized Signatory (Rajkot HQ)</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeDocModal() {
+            document.getElementById('documentModal').classList.add('hidden');
+        }
+
+        function printActiveDocument() {
+            openPrintModalForSO(state.selectedOrderId);
+        }
+
+        // =========================================================================
+        // DEMO STEP WALKTHROUGH CONTROLLER
+        // =========================================================================
+        function demoStep(stepNum) {
+            if (stepNum === 1) {
+                state.selectedOrderId = 'SO-00842';
+                switchApp('sales');
+                setViewMode('form');
+            } else if (stepNum === 2) {
+                switchApp('export');
+            } else if (stepNum === 3) {
+                switchApp('import');
+            } else if (stepNum === 4) {
+                openPrintModalForSO('SO-00842');
+            } else if (stepNum === 5) {
+                state.selectedOrderId = 'SO-00842';
+                openPaymentModal();
+            }
+        }
+
+        function openNewRecordModal() {
+            document.getElementById('newRecordModal').classList.remove('hidden');
+        }
+
+        function closeNewRecordModal() {
+            document.getElementById('newRecordModal').classList.add('hidden');
+        }
+
+        function saveNewOrderRecord() {
+            const cust = document.getElementById('newCustomerSelect').value;
+            const pCode = document.getElementById('newProductSelect').value;
+            const qty = parseInt(document.getElementById('newQty').value) || 1000;
+            const port = document.getElementById('newPort').value;
+
+            const prod = state.products.find(p => p.code === pCode) || state.products[0];
+            const lineTotal = qty * prod.priceUSD;
+
+            const newSO = {
+                id: `SO-0084${state.salesOrders.length + 1}`,
+                customer: cust,
+                country: 'United Arab Emirates 🇦🇪',
+                city: 'Dubai',
+                date: new Date().toISOString().substring(0, 10),
+                incoterm: 'FOB Mundra Port (INMUN1)',
+                portLoading: 'Mundra Port (INMUN1)',
+                portDischarge: port,
+                currency: 'USD',
+                totalUSD: lineTotal,
+                totalINR: lineTotal * 83.5,
+                status: 'Sales Order',
+                paymentStatus: 'Unpaid',
+                lutNo: 'AD240324008192E',
+                shippingBillNo: 'Pending',
+                items: [
+                    { productCode: prod.code, name: prod.name, qty: qty, priceUSD: prod.priceUSD, lineTotalUSD: lineTotal }
+                ]
+            };
+
+            state.salesOrders.unshift(newSO);
+            state.selectedOrderId = newSO.id;
+            closeNewRecordModal();
+            switchApp('sales');
+            setViewMode('form');
+            alert(`Sales Order ${newSO.id} created successfully!`);
+        }
+
+        function handleGlobalSearch() {
+            const query = document.getElementById('globalSearchInput').value.toLowerCase();
+            if (!query) return;
+
+            const match = state.salesOrders.find(s => s.id.toLowerCase().includes(query) || s.customer.toLowerCase().includes(query));
+            if (match) {
+                openOrderForm(match.id);
+            }
+        }
+
+        function handlePrimaryAction() {
+            if (state.currentApp === 'sales') {
+                confirmCurrentOrder(state.selectedOrderId);
+            }
+        }
+
+        function saveCurrentRecord() {
+            alert('Record saved to CzarFlow ERP cloud datastore.');
+        }
+
+        // =========================================================================
+        // INITIALIZATION ON LOAD
+        // =========================================================================
+        window.onload = function() {
+            renderMainWorkspace();
+        };
+    </script>
+</body>
+</html>
